@@ -22,6 +22,7 @@ async function run() {
   try {
     const categoriesCollection = client.db("brand-shop").collection("categories");
     const productsCollection = client.db("brand-shop").collection("products");
+    const subscribersCollection = client.db("brand-shop").collection("subscribers");
 
     app.get('/categories', async(req, res) => {
       const result = await categoriesCollection.find().toArray();
@@ -43,6 +44,15 @@ async function run() {
     })
     app.post('/products', async(req, res) => {
       const result = await productsCollection.insertOne(req.body);
+      res.send(result);
+    })
+    
+    app.get('/subscribers', async(req, res) => {
+      const result = await subscribersCollection.find().toArray();
+      res.send(result);
+    })
+    app.post('/subscribers', async(req, res) => {
+      const result = await subscribersCollection.insertOne(req.body)
       res.send(result);
     })
 
