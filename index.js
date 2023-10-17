@@ -21,14 +21,28 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     const categoriesCollection = client.db("brand-shop").collection("categories");
+    const productsCollection = client.db("brand-shop").collection("products");
 
     app.get('/categories', async(req, res) => {
       const result = await categoriesCollection.find().toArray();
       res.send(result);
     })
-    app.get('/categories/:name', async(req, res) => {
-      const filter = {name: (req.params.name[0].toUpperCase()+req.params.name.slice(1).toLowerCase())};
-      const result = await categoriesCollection.findOne(filter);
+    app.get('/categories/:category', async(req, res) => {
+      const filter = {category: (req.params.category[0].toUpperCase()+req.params.category.slice(1).toLowerCase())};
+      const result = await productsCollection.find(filter).toArray();
+      res.send(result);
+    })
+    app.get('/products', async(req, res) => {
+      const result = await productsCollection.find().toArray();
+      res.send(result);
+    })
+    app.get('/products/:slug', async(req, res) => {
+      const find = {slug: req.params.slug};
+      const result = await productsCollection.findOne(filter);
+      res.send(result);
+    })
+    app.post('/products', async(req, res) => {
+      const result = await productsCollection.insertOne(req.body);
       res.send(result);
     })
 
