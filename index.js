@@ -59,12 +59,17 @@ async function run() {
       const result = await usersCollection.find().toArray();
       res.send(result)
     })
-    app.post('/users', async(req, res) => {
-      const result = await usersCollection.insertOne(req.body);
+    app.put('/users/:email', async(req, res) => {
+      const filter = {email: req.params.email};
+      const options = {upsert: true};
+      const newUser = {
+        $set: req.body
+      }
+      const result = await usersCollection.updateOne(filter, newUser, options);
       res.send(result)
     })
-    app.get('/users/:uid', async(req, res) => {
-      const filter = {uid: req.params.uid};
+    app.get('/users/:email', async(req, res) => {
+      const filter = {email: req.params.email};
       const result = await usersCollection.findOne(filter);
       res.send(result);
     })
