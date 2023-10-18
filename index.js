@@ -54,23 +54,24 @@ async function run() {
       const result = await productsCollection.find(filter).toArray();
       res.send(result);
     })
+    app.get('/products/types/:type', async(req, res) => {
+      const filter = {type: req.params.type};
+      const result = await productsCollection.find(filter).toArray();
+      res.send(result);
+    })
 
     app.get('/users', async(req, res) => {
       const result = await usersCollection.find().toArray();
       res.send(result)
     })
-    app.put('/users/:email', async(req, res) => {
-      const filter = {email: req.params.email};
-      const options = {upsert: true};
-      const newUser = {
-        $set: req.body
-      }
-      const result = await usersCollection.updateOne(filter, newUser, options);
-      res.send(result)
-    })
     app.get('/users/:email', async(req, res) => {
       const filter = {email: req.params.email};
       const result = await usersCollection.findOne(filter);
+      res.send(result);
+    })
+    app.put('/users/:email', async(req, res) => {
+      const filter = {email: req.params.email};
+      const result = await usersCollection.replaceOne(filter, req.body)
       res.send(result);
     })
     
@@ -85,10 +86,6 @@ async function run() {
 
     app.get('/banners', async(req, res) => {
       const result = await bannersCollection.find().toArray();
-      res.send(result);
-    })
-    app.post('/banners', async(req, res) => {
-      const result = await bannersCollection.insertOne(req.body);
       res.send(result);
     })
     app.get('/banners/:category', async(req, res) => {
