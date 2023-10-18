@@ -20,10 +20,11 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
-    const categoriesCollection = client.db("brand-shop").collection("categories");
     const productsCollection = client.db("brand-shop").collection("products");
-    const subscribersCollection = client.db("brand-shop").collection("subscribers");
+    const categoriesCollection = client.db("brand-shop").collection("categories");
+    const usersCollection = client.db("brand-shop").collection("users");
     const bannersCollection = client.db("brand-shop").collection("banners");
+    const subscribersCollection = client.db("brand-shop").collection("subscribers");
 
     app.get('/categories', async(req, res) => {
       const result = await categoriesCollection.find().toArray();
@@ -53,6 +54,20 @@ async function run() {
       const result = await productsCollection.find(filter).toArray();
       res.send(result);
     })
+
+    app.get('/users', async(req, res) => {
+      const result = await usersCollection.find().toArray();
+      res.send(result)
+    })
+    app.post('/users', async(req, res) => {
+      const result = await usersCollection.insertOne(req.body);
+      res.send(result)
+    })
+    app.get('/users/:uid', async(req, res) => {
+      const filter = {uid: req.params.uid};
+      const result = await usersCollection.findOne(filter);
+      res.send(result);
+    })
     
     app.get('/subscribers', async(req, res) => {
       const result = await subscribersCollection.find().toArray();
@@ -67,13 +82,13 @@ async function run() {
       const result = await bannersCollection.find().toArray();
       res.send(result);
     })
+    app.post('/banners', async(req, res) => {
+      const result = await bannersCollection.insertOne(req.body);
+      res.send(result);
+    })
     app.get('/banners/:category', async(req, res) => {
       const filter = {category : req.params.category};
       const result = await bannersCollection.findOne(filter);
-      res.send(result);
-    })
-    app.post('/banners', async(req, res) => {
-      const result = await bannersCollection.insertOne(req.body);
       res.send(result);
     })
 
