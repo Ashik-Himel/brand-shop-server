@@ -39,7 +39,7 @@ async function run() {
       res.send(result);
     })
     app.get('/products/:slug', async(req, res) => {
-      const find = {slug: req.params.slug};
+      const filter = {slug: req.params.slug};
       const result = await productsCollection.findOne(filter);
       res.send(result);
     })
