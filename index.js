@@ -23,6 +23,7 @@ async function run() {
     const categoriesCollection = client.db("brand-shop").collection("categories");
     const productsCollection = client.db("brand-shop").collection("products");
     const subscribersCollection = client.db("brand-shop").collection("subscribers");
+    const bannersCollection = client.db("brand-shop").collection("banners");
 
     app.get('/categories', async(req, res) => {
       const result = await categoriesCollection.find().toArray();
@@ -43,7 +44,7 @@ async function run() {
       res.send(result);
     })
     app.get('/products/categories/:category', async(req, res) => {
-      const filter = {category: (req.params.category[0].toUpperCase()+req.params.category.slice(1).toLowerCase())};
+      const filter = {category: req.params.category};
       const result = await productsCollection.find(filter).toArray();
       res.send(result);
     })
@@ -54,6 +55,20 @@ async function run() {
     })
     app.post('/subscribers', async(req, res) => {
       const result = await subscribersCollection.insertOne(req.body)
+      res.send(result);
+    })
+
+    app.get('/banners', async(req, res) => {
+      const result = await bannersCollection.find().toArray();
+      res.send(result);
+    })
+    app.get('/banners/:category', async(req, res) => {
+      const filter = {category : req.params.category};
+      const result = await bannersCollection.findOne(filter);
+      res.send(result);
+    })
+    app.post('/banners', async(req, res) => {
+      const result = await bannersCollection.insertOne(req.body);
       res.send(result);
     })
 
