@@ -29,6 +29,11 @@ async function run() {
       const result = await categoriesCollection.find().toArray();
       res.send(result);
     })
+    app.get('/categories/:category', async(req, res) => {
+      const filter = {name: req.params.category};
+      const result = await categoriesCollection.findOne(filter);
+      res.send(result);
+    })
 
     app.get('/products', async(req, res) => {
       const result = await productsCollection.find().toArray();
