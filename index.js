@@ -71,7 +71,15 @@ async function run() {
     app.get('/usersCart/:uid', async(req, res) => {
       const filter = {uid: req.params.uid};
       const result = await usersCartCollection.findOne(filter);
-      res.send(result.items);
+
+      const slugs = result.items.map(item => item[0]);
+      const filter2 = {slug: {$in: slugs}};
+      const final = await productsCollection.find(filter2).toArray();
+      final.forEach((item, index) => {
+        item.quantity = Number(result.items[index][1]);
+        item.subTotal = result.items[index][2];
+      })
+      res.send(final);
     })
     app.put('/usersCart/:uid', async(req, res) => {
       const filter = {uid: req.params.uid};
@@ -101,6 +109,22 @@ async function run() {
       }
       
       const result = await usersCartCollection.updateOne(filter, updatedUsersCart, options);
+      res.send(result);
+    })
+    app.delete('/usersCart/:uid/:slug', async(req, res) => {
+      const filter = {uid: req.params.uid};
+      const cart = await usersCartCollection.findOne(filter);
+      for(let i = 0; i < cart.items.length; i++) {
+        if (cart.items[i][0] === req.params.slug) {
+          cart.items.splice(i, 1);
+          break;
+        }
+      }
+      
+      const updatedCart = {
+        $set: cart
+      }
+      const result = await usersCartCollection.updateOne(filter, updatedCart);
       res.send(result);
     })
     
