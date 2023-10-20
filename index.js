@@ -72,14 +72,34 @@ async function run() {
       const filter = {uid: req.params.uid};
       const result = await usersCartCollection.findOne(filter);
 
-      const slugs = result.items.map(item => item[0]);
-      const filter2 = {slug: {$in: slugs}};
-      const final = await productsCollection.find(filter2).toArray();
-      final.forEach((item, index) => {
-        item.quantity = Number(result.items[index][1]);
-        item.subTotal = result.items[index][2];
-      })
-      res.send(final);
+      if (!result) {
+        res.send([])
+      } else {
+        let filter2 = {};
+        if (result.items.length === 0) {
+          res.send([])
+        } else {
+          if (result.items.length === 1) {
+            const slug = result.items[0][0];
+            filter2 = {slug: slug};
+          } else {
+            const slugs = result.items.map(item => item[0]);
+            filter2 = {slug: {$in: slugs}};
+          }
+          const final = await productsCollection.find(filter2).toArray();
+        
+          final.forEach(product => {
+            for (let i = 0; i < result.items.length; i++) {
+              if (product.slug === result.items[i][0]) {
+                product.quantity = result.items[i][1];
+                product.subTotal = result.items[i][2];
+                break;
+              }
+            }
+          })
+          res.send(final)
+        }
+      }
     })
     app.put('/usersCart/:uid', async(req, res) => {
       const filter = {uid: req.params.uid};
@@ -92,19 +112,34 @@ async function run() {
           $set: req.body
         };
       } else {
-        if (usersCartNow.items.flat().includes(req.body.items[0][0])) {
-          for(let i = 0; i < usersCartNow.items.length; i++) {
-            if (usersCartNow.items[i][0] === req.body.items[0][0]) {
-              usersCartNow.items[i][1] += req.body.items[0][1];
-              usersCartNow.items[i][2] += req.body.items[0][2];
-              break;
-            }
+        if (usersCartNow.items.length === 0) {
+          updatedUsersCart = {
+            $set: req.body
           }
         } else {
-          usersCartNow.items.push(req.body.items[0])
-        }
-        updatedUsersCart = {
-          $set: usersCartNow
+          if (usersCartNow.items.length === 1) {
+            if (usersCartNow.items[0][0] === req.body.items[0][0]) {
+              usersCartNow.items[0][1] += req.body.items[0][1];
+              usersCartNow.items[0][2] += req.body.items[0][2];
+            } else {
+              usersCartNow.items.push(req.body.items[0]);
+            }
+          } else {
+            if (usersCartNow.items.flat().includes(req.body.items[0][0])) {
+              for(let i = 0; i < usersCartNow.items.length; i++) {
+                if (usersCartNow.items[i][0] === req.body.items[0][0]) {
+                  usersCartNow.items[i][1] += req.body.items[0][1];
+                  usersCartNow.items[i][2] += req.body.items[0][2];
+                  break;
+                }
+              }
+            } else {
+              usersCartNow.items.push(req.body.items[0]);
+            }
+          }
+          updatedUsersCart = {
+            $set: usersCartNow
+          }
         }
       }
       
