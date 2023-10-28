@@ -20,24 +20,28 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
-    const productsCollection = client.db("brand-shop").collection("products");
-    const categoriesCollection = client.db("brand-shop").collection("categories");
-    const usersCartCollection = client.db("brand-shop").collection("usersCart");
-    const bannersCollection = client.db("brand-shop").collection("banners");
-    const subscribersCollection = client.db("brand-shop").collection("subscribers");
+    const database = client.db("brand-shop");
+    const productsCollection = database.collection("products");
+    const categoriesCollection = database.collection("categories");
+    const usersCartCollection = database.collection("usersCart");
+    const bannersCollection = database.collection("banners");
+    const subscribersCollection = database.collection("subscribers");
 
     app.get('/categories', async(req, res) => {
-      const result = await categoriesCollection.find().toArray();
+      const options = {projection: {_id: 0, name: 1, image: 1}}
+      const result = await categoriesCollection.find({}, options).toArray();
       res.send(result);
     })
     app.get('/categories/:category', async(req, res) => {
       const filter = {name: req.params.category};
-      const result = await categoriesCollection.findOne(filter);
+      const options = {projection: {_id: 0, name: 1, image: 1}};
+      const result = await categoriesCollection.findOne(filter, options);
       res.send(result);
     })
 
     app.get('/products', async(req, res) => {
-      const result = await productsCollection.find().toArray();
+      const options = {projection: {_id: 0, slug: 1, image: 1, name: 1, price: 1, rating: 1}};
+      const result = await productsCollection.find({}, options).toArray();
       res.send(result);
     })
     app.post('/products', async(req, res) => {
@@ -46,7 +50,8 @@ async function run() {
     })
     app.get('/products/:slug', async(req, res) => {
       const filter = {slug: req.params.slug};
-      const result = await productsCollection.findOne(filter);
+      const options = {projection: {_id: 0, image: 1, name: 1, price: 1, shortDescription: 1, category: 1, type: 1, rating: 1}}
+      const result = await productsCollection.findOne(filter, options);
       res.send(result);
     })
     app.put('/products/:slug', async(req, res) => {
@@ -59,18 +64,21 @@ async function run() {
     })
     app.get('/products/categories/:category', async(req, res) => {
       const filter = {category: req.params.category};
-      const result = await productsCollection.find(filter).toArray();
+      const options = {projection: {_id: 0, slug: 1, name: 1, image: 1, type: 1, category: 1, price: 1, rating: 1}};
+      const result = await productsCollection.find(filter, options).toArray();
       res.send(result);
     })
     app.get('/products/types/:type', async(req, res) => {
       const filter = {type: req.params.type};
-      const result = await productsCollection.find(filter).toArray();
+      const options = {projection: {_id: 0, slug: 1, name: 1, image: 1, price: 1, rating: 1}};
+      const result = await productsCollection.find(filter, options).limit(4).toArray();
       res.send(result);
     })
 
     app.get('/usersCart/:uid', async(req, res) => {
       const filter = {uid: req.params.uid};
-      const result = await usersCartCollection.findOne(filter);
+      const options = {projection: {_id: 0, items: 1}}
+      const result = await usersCartCollection.findOne(filter, options);
 
       if (!result) {
         res.send([])
@@ -86,7 +94,8 @@ async function run() {
             const slugs = result.items.map(item => item[0]);
             filter2 = {slug: {$in: slugs}};
           }
-          const final = await productsCollection.find(filter2).toArray();
+          const options = {projection: {_id: 0, slug: 1, image: 1, name: 1}}
+          const final = await productsCollection.find(filter2, options).toArray();
         
           final.forEach(product => {
             for (let i = 0; i < result.items.length; i++) {
@@ -175,8 +184,9 @@ async function run() {
 
     app.get('/banners/:category', async(req, res) => {
       const filter = {category : req.params.category};
-      const result = await bannersCollection.findOne(filter);
-      res.send(result);
+      const options = {projection: {_id: 0, images: 1}}
+      const result = await bannersCollection.findOne(filter, options);
+      res.send(result?.images);
     })
 
     await client.db("admin").command({ ping: 1 });
