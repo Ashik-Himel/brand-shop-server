@@ -7,7 +7,7 @@ require('dotenv').config();
 
 const app = express();
 app.use(cors({
-  origin: ["https://brand-shop-1.web.app", "http://localhost:5001"],
+  origin: ["https://brand-shop-1.web.app", "https://brand-shop-1.firebaseapp.com",  "http://localhost:5001"],
   credentials: true
 }));
 app.use(express.json());
