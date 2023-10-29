@@ -1,13 +1,30 @@
 const express = require('express');
 const cors = require('cors');
+const jwt = require('jsonwebtoken');
+const cookieParser = require('cookie-parser');
 const { MongoClient, ServerApiVersion } = require('mongodb');
 require('dotenv').config();
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: ["http://localhost:5173", "https://brand-shop-1.web.app"],
+  credentials: true
+}));
 app.use(express.json());
+app.use(cookieParser());
 const port = process.env.PORT || 5001;
 
+const verify = (req, res, next) => {
+  const token = req.cookies.token;
+  if (!token) return res.sendStatus(401);
+
+  jwt.verify(token, process.env.JWT_SECRET, (err, decode) => {
+    if (err) return res.sendStatus(403);
+
+    req.user = decode;
+    next();
+  })
+}
 
 const uri = `mongodb+srv://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}@cluster0.xeaidsx.mongodb.net/?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, {
@@ -27,6 +44,15 @@ async function run() {
     const bannersCollection = database.collection("banners");
     const subscribersCollection = database.collection("subscribers");
 
+    app.post('/login', (req, res) => {
+      const token = jwt.sign(req.body, process.env.JWT_SECRET, {expiresIn: '3d'});
+      res.cookie("token", token, {
+        httpOnly: true,
+        secure: false,
+        maxAge: 259200000
+      }).send("Successful");
+    })
+
     app.get('/categories', async(req, res) => {
       const options = {projection: {_id: 0, name: 1, image: 1}}
       const result = await categoriesCollection.find({}, options).toArray();
@@ -44,17 +70,23 @@ async function run() {
       const result = await productsCollection.find({}, options).toArray();
       res.send(result);
     })
-    app.post('/products', async(req, res) => {
+    app.post('/products', verify, async(req, res) => {
+      if (req.headers.authorization !== req.user.email) return res.sendStatus(403);
+      
       const result = await productsCollection.insertOne(req.body);
       res.send(result);
     })
-    app.get('/products/:slug', async(req, res) => {
+    app.get('/products/:slug', verify, async(req, res) => {
+      if (req.headers.authorization !== req.user.email) return res.sendStatus(403);
+
       const filter = {slug: req.params.slug};
       const options = {projection: {_id: 0, image: 1, name: 1, price: 1, shortDescription: 1, category: 1, type: 1, rating: 1}}
       const result = await productsCollection.findOne(filter, options);
       res.send(result);
     })
-    app.put('/products/:slug', async(req, res) => {
+    app.put('/products/:slug', verify, async(req, res) => {
+      if (req.headers.authorization !== req.user.email) return res.sendStatus(403);
+
       const filter = {slug: req.params.slug};
       const updatedProduct = {
         $set : req.body
@@ -75,7 +107,9 @@ async function run() {
       res.send(result);
     })
 
-    app.get('/usersCart/:uid', async(req, res) => {
+    app.get('/usersCart/:uid', verify, async(req, res) => {
+      if (req.headers.authorization !== req.user.email) return res.sendStatus(403);
+
       const filter = {uid: req.params.uid};
       const options = {projection: {_id: 0, items: 1}}
       const result = await usersCartCollection.findOne(filter, options);
@@ -110,7 +144,9 @@ async function run() {
         }
       }
     })
-    app.put('/usersCart/:uid', async(req, res) => {
+    app.put('/usersCart/:uid', verify, async(req, res) => {
+      if (req.headers.authorization !== req.user.email) return res.sendStatus(403);
+
       const filter = {uid: req.params.uid};
       const options = {upsert: true};
       let updatedUsersCart = {};
@@ -155,7 +191,9 @@ async function run() {
       const result = await usersCartCollection.updateOne(filter, updatedUsersCart, options);
       res.send(result);
     })
-    app.delete('/usersCart/:uid/:slug', async(req, res) => {
+    app.delete('/usersCart/:uid/:slug', verify, async(req, res) => {
+      if (req.headers.authorization !== req.user.email) return res.sendStatus(403);
+
       const filter = {uid: req.params.uid};
       const cart = await usersCartCollection.findOne(filter);
       for(let i = 0; i < cart.items.length; i++) {
