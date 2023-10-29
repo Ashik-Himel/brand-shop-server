@@ -48,7 +48,7 @@ async function run() {
       const token = jwt.sign(req.body, process.env.JWT_SECRET, {expiresIn: '3d'});
       res.cookie("token", token, {
         httpOnly: true,
-        secure: false,
+        secure: true,
         maxAge: 259200000
       }).send("Successful");
     })
