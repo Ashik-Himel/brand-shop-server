@@ -7,7 +7,7 @@ require('dotenv').config();
 
 const app = express();
 app.use(cors({
-  origin: "https://brand-shop-1.web.app",
+  origin: ["https://brand-shop-1.web.app", "http://localhost:5001"],
   credentials: true
 }));
 app.use(express.json());
@@ -48,7 +48,6 @@ async function run() {
       const token = jwt.sign(req.body, process.env.JWT_SECRET, {expiresIn: '3d'});
       res.cookie("token", token, {
         httpOnly: true,
-        secure: true,
         maxAge: 259200000
       }).send("Successful");
     })
