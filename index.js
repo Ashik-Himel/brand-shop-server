@@ -7,7 +7,7 @@ require('dotenv').config();
 
 const app = express();
 app.use(cors({
-  origin: ["https://brand-shop-1.web.app", "http://localhost:5173"],
+  origin: "https://brand-shop-1.web.app",
   credentials: true
 }));
 app.use(express.json());
@@ -16,12 +16,11 @@ const port = process.env.PORT || 5001;
 
 const verify = (req, res, next) => {
   const token = req.cookies?.token;
-  if (!token) return res.send("Unauthorized access");
+  if (!token) return res.sendStatus(401).send("Unauthorized access");
 
   jwt.verify(token, process.env.JWT_SECRET, (err, decode) => {
-    if (err) return res.send("Forbidden");
+    if (err || req.headers?.authorization?.split(' ')[1] !== decode?.email) return res.sendStatus(403).send("Forbidden");
 
-    req.user = decode;
     next();
   })
 }
@@ -48,6 +47,8 @@ async function run() {
       const token = jwt.sign(req.body, process.env.JWT_SECRET, {expiresIn: '3d'});
       res.cookie("token", token, {
         httpOnly: true,
+        secure: true,
+        sameSite: 'none',
         maxAge: 259200000
       }).send("Successful");
     })
@@ -70,22 +71,16 @@ async function run() {
       res.send(result);
     })
     app.post('/products', verify, async(req, res) => {
-      if (req.headers.authorization.split(' ')[1] !== req.user.email) return res.send("Forbidden");
-      
       const result = await productsCollection.insertOne(req.body);
       res.send(result);
     })
     app.get('/products/:slug', verify, async(req, res) => {
-      if (req.headers.authorization.split(' ')[1] !== req.user.email) return res.send("Forbidden");
-
       const filter = {slug: req.params.slug};
       const options = {projection: {_id: 0, image: 1, name: 1, price: 1, shortDescription: 1, category: 1, type: 1, rating: 1}}
       const result = await productsCollection.findOne(filter, options);
       res.send(result);
     })
     app.put('/products/:slug', verify, async(req, res) => {
-      if (req.headers.authorization.split(' ')[1] !== req.user.email) return res.send("Forbidden");
-
       const filter = {slug: req.params.slug};
       const updatedProduct = {
         $set : req.body
@@ -107,8 +102,6 @@ async function run() {
     })
 
     app.get('/usersCart/:uid', verify, async(req, res) => {
-      if (req.headers.authorization.split(' ')[1] !== req.user.email) return res.send("Forbidden");
-
       const filter = {uid: req.params.uid};
       const options = {projection: {_id: 0, items: 1}}
       const result = await usersCartCollection.findOne(filter, options);
@@ -144,8 +137,6 @@ async function run() {
       }
     })
     app.put('/usersCart/:uid', verify, async(req, res) => {
-      if (req.headers.authorization.split(' ')[1] !== req.user.email) return res.send("Forbidden");
-
       const filter = {uid: req.params.uid};
       const options = {upsert: true};
       let updatedUsersCart = {};
@@ -191,8 +182,6 @@ async function run() {
       res.send(result);
     })
     app.delete('/usersCart/:uid/:slug', verify, async(req, res) => {
-      if (req.headers.authorization.split(' ')[1] !== req.user.email) return res.send("Forbidden");
-
       const filter = {uid: req.params.uid};
       const cart = await usersCartCollection.findOne(filter);
       for(let i = 0; i < cart.items.length; i++) {
